@@ -3,11 +3,11 @@
 #include "../libft/includes/libft.h"
 
 static struct s_rz_list	*head;
-static const char *head_data = "Hello";
+static const char head_data[] = "Hello";
 
 void setup_add_list(void)
 {
-	rz_list_add(&head, ft_strdup(head_data));
+	rz_list_add(&head, head_data, sizeof head_data);
 }
 
 void teardown_add_list(void)
@@ -20,8 +20,9 @@ void teardown_add_list(void)
 START_TEST(test_list_add_to_empty_list)
 {
 	ck_assert_ptr_nonnull(head);
-	ck_assert_pstr_eq(head->data, head_data);
 	ck_assert_ptr_null(head->next);
+	ck_assert_ptr_ne(head->data, head_data);
+	ck_assert_mem_eq(head->data, head_data, sizeof head_data);
 }
 END_TEST
 

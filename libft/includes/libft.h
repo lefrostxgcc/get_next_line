@@ -61,6 +61,6 @@ char *	ft_strjoin(char const *s1, char const *s2);
 char *	ft_strtrim(char const *s);
 char **	ft_strsplit(char const *s, char c);
 char **	ft_strsplit2(char const *s, char c);
-struct s_rz_list *rz_list_add(struct s_rz_list **head, void *data);
+struct s_rz_list *rz_list_add(struct s_rz_list **h, const void *d, size_t n);
 
 #endif /* LIBFT_H */
