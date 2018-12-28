@@ -46,18 +46,29 @@ START_TEST(test_list_add_to_exist_list)
 }
 END_TEST
 
+START_TEST(test_list_free_null_head_param)
+{
+	rz_list_free(NULL);
+}
+END_TEST
+
 Suite *list_suite(void)
 {
 	Suite *s;
 	TCase *tc_list_add;
+	TCase *tc_list_free;
 
 	s = suite_create("List");
 	tc_list_add = tcase_create("List add");
 	tcase_add_checked_fixture(tc_list_add, setup_add_list, teardown_add_list);
 	tcase_add_test(tc_list_add, test_list_add_to_empty_list);
 	tcase_add_test(tc_list_add, test_list_add_to_exist_list);
+
+	tc_list_free = tcase_create("List free");
+	tcase_add_test(tc_list_free, test_list_free_null_head_param);
 	
 	suite_add_tcase(s, tc_list_add);
+	suite_add_tcase(s, tc_list_free);
 
 	return s;
 }
