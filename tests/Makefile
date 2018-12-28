@@ -1,8 +1,8 @@
 CFLAGS = -Wall -Wextra -Werror -DUNIT_TEST `pkg-config --cflags check`
 
-HEADERS := ../libft/includes/libft.h
+HEADERS := ../libft/includes/libft.h read.h file.h
 LIST_SRCS := test_list.c
-LINE_SRCS := test_line.c
+LINE_SRCS := test_line.c read.c
 LIBFT := ../libft/libft.a
 LINE_FUNC_OBJS := ../get_next_line.o
 LDADD := `pkg-config --libs check`
