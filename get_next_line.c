@@ -8,6 +8,7 @@ int		get_next_line(struct s_rz_file *file, char **line,
 {
 	static char	buf[BUFF_SIZE];
 	ssize_t		bytes_read;
+	char		*lf_pos;
 
 	if (file == NULL || file->fd < 0 || line == NULL)
 		return (-1);
@@ -20,8 +21,10 @@ int		get_next_line(struct s_rz_file *file, char **line,
 	}
 	else
 	{
-		*line = ft_strnew(bytes_read - 2);
-		memcpy(*line, buf, bytes_read - 2);
+		lf_pos = ft_strchr(buf, '\n');
+		bytes_read = lf_pos != NULL ? lf_pos - buf : bytes_read;
+		*line = ft_strnew(bytes_read);
+		memcpy(*line, buf, bytes_read);
 	}
 	return (1);
 }

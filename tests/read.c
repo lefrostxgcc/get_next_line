@@ -42,6 +42,7 @@ ssize_t rz_read(struct s_rz_file *file, void *buf, size_t count)
 {
 	size_t		bytes_in_buf;
 	size_t		bytes_read;
+	size_t		EOF_pos;
 
 	if (file == NULL)
 		return -1;
@@ -54,6 +55,11 @@ ssize_t rz_read(struct s_rz_file *file, void *buf, size_t count)
 		return (0);
 	}
 	bytes_read = bytes_in_buf > count ? count : bytes_in_buf;
+	for (EOF_pos = 0; EOF_pos < bytes_read; EOF_pos++)
+		if (file->buf[file->pos + EOF_pos] == EOF)
+			break;
+	if (EOF_pos < bytes_read)
+		bytes_read = EOF_pos;
 	memcpy(buf, file->buf + file->pos, bytes_read);
 	file->pos += bytes_read;
 	return bytes_read;
