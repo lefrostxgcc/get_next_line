@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "read.h"
 
 struct s_rz_file *rz_open_fd(int fd)
@@ -46,7 +47,12 @@ ssize_t rz_read(struct s_rz_file *file, void *buf, size_t count)
 		return -1;
 	bytes_in_buf = file->size - file->pos;
 	if (bytes_in_buf <= 0)
-		return 0;
+		return (0);
+	else if (bytes_in_buf == 1 && file->buf[file->pos] == EOF)
+	{
+		file->pos++;
+		return (0);
+	}
 	bytes_read = bytes_in_buf > count ? count : bytes_in_buf;
 	memcpy(buf, file->buf + file->pos, bytes_read);
 	file->pos += bytes_read;

@@ -13,7 +13,15 @@ int		get_next_line(struct s_rz_file *file, char **line,
 		return (-1);
 
 	bytes_read = pfread(file, buf, BUFF_SIZE);
-	*line = ft_strnew(bytes_read - 2);
-	memcpy(*line, buf, bytes_read - 2);
-	return (0);
+	if (bytes_read == 0)
+	{
+		*line = NULL;
+		return (0);
+	}
+	else
+	{
+		*line = ft_strnew(bytes_read - 2);
+		memcpy(*line, buf, bytes_read - 2);
+	}
+	return (1);
 }

@@ -31,6 +31,23 @@ START_TEST(test_line_null_line)
 }
 END_TEST
 
+START_TEST(test_line_empty_buf)
+{
+	struct	s_rz_file	*file;
+	char				*line;
+	int					result;
+	char				buf[] = {EOF};
+
+	file = rz_open_fd(1);
+	rz_set_read_buf(file, buf, sizeof buf);
+	line = NULL;
+	result = get_next_line(file, &line, rz_read);
+	ck_assert_int_eq(result, 0);
+	ck_assert_ptr_null(line);
+	rz_close_fd(file);
+}
+END_TEST
+
 START_TEST(test_line_one_buf_one_line)
 {
 	struct	s_rz_file	*file;
@@ -42,7 +59,7 @@ START_TEST(test_line_one_buf_one_line)
 	rz_set_read_buf(file, buf, sizeof buf);
 	line = NULL;
 	result = get_next_line(file, &line, rz_read);
-	ck_assert_int_eq(result, 0);
+	ck_assert_int_eq(result, 1);
 	ck_assert_pstr_eq(line, "hello");
 	rz_close_fd(file);
 }
@@ -60,6 +77,7 @@ Suite *line_suite(void)
 	tcase_add_test(tc_line_error_params, test_line_null_line);
 
 	tc_line_one_buf = tcase_create("Line one buf size");
+	tcase_add_test(tc_line_one_buf, test_line_empty_buf);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_one_line);
 
 	suite_add_tcase(s, tc_line_error_params);
