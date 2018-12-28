@@ -5,12 +5,14 @@
 START_TEST(test_list_add_to_empty_list)
 {
 	struct s_rz_list	*head;
+	struct s_rz_list	*node;
 	char				*data;
 
 	head = NULL;
 	data = ft_strdup("Hello");
-	rz_list_add(&head, data);
+	node = rz_list_add(&head, data);
 	ck_assert_ptr_nonnull(head);
+	ck_assert_ptr_eq(head, node);
 	ck_assert_ptr_eq(head->data, data);
 	ck_assert_ptr_null(head->next);
 	free(data);
