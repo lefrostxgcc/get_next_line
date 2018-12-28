@@ -2,6 +2,12 @@
 #define LIBFT_H
 #include <string.h>
 
+struct s_rz_list
+{
+	void				*data;
+	struct s_rz_list	*next;
+};
+
 void *	ft_memset(void *s, int c, size_t n);
 void	ft_bzero(void *s, size_t n);
 void *	ft_memcpy(void *dest, void const *src, size_t n);
@@ -55,5 +61,6 @@ char *	ft_strjoin(char const *s1, char const *s2);
 char *	ft_strtrim(char const *s);
 char **	ft_strsplit(char const *s, char c);
 char **	ft_strsplit2(char const *s, char c);
+void	rz_list_add(struct s_rz_list **head, void *data);
 
 #endif /* LIBFT_H */
