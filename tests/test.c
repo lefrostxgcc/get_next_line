@@ -2,21 +2,26 @@
 #include <stdlib.h>
 #include "../libft/includes/libft.h"
 
+static struct s_rz_list	*head;
+static const char *head_data = "Hello";
+
+void setup_add_list(void)
+{
+	rz_list_add(&head, ft_strdup(head_data));
+}
+
+void teardown_add_list(void)
+{
+	free(head->data);
+	free(head);
+	head = NULL;
+}
+
 START_TEST(test_list_add_to_empty_list)
 {
-	struct s_rz_list	*head;
-	struct s_rz_list	*node;
-	char				*data;
-
-	head = NULL;
-	data = ft_strdup("Hello");
-	node = rz_list_add(&head, data);
 	ck_assert_ptr_nonnull(head);
-	ck_assert_ptr_eq(head, node);
-	ck_assert_ptr_eq(head->data, data);
+	ck_assert_pstr_eq(head->data, head_data);
 	ck_assert_ptr_null(head->next);
-	free(data);
-	free(head);
 }
 END_TEST
 
@@ -27,7 +32,7 @@ Suite *list_suite(void)
 
 	s = suite_create("List");
 	tc_list_add = tcase_create("List add");
-
+	tcase_add_checked_fixture(tc_list_add, setup_add_list, teardown_add_list);
 	tcase_add_test(tc_list_add, test_list_add_to_empty_list);
 	
 	suite_add_tcase(s, tc_list_add);
