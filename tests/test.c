@@ -26,6 +26,23 @@ START_TEST(test_list_add_to_empty_list)
 }
 END_TEST
 
+START_TEST(test_list_add_to_exist_list)
+{
+	struct s_rz_list	*node;
+	const char			data[] = "World";
+
+	node = rz_list_add(&head, data, sizeof data);
+
+	ck_assert_ptr_nonnull(head);
+	ck_assert_ptr_nonnull(node);
+	ck_assert_ptr_null(node->next);
+	ck_assert_ptr_eq(head->next, node);
+	ck_assert_ptr_ne(node->data, data);
+	ck_assert_mem_eq(node->data, data, sizeof data);
+	ck_assert_mem_eq(head->data, head_data, sizeof head_data);
+}
+END_TEST
+
 Suite *list_suite(void)
 {
 	Suite *s;
@@ -35,6 +52,7 @@ Suite *list_suite(void)
 	tc_list_add = tcase_create("List add");
 	tcase_add_checked_fixture(tc_list_add, setup_add_list, teardown_add_list);
 	tcase_add_test(tc_list_add, test_list_add_to_empty_list);
+	tcase_add_test(tc_list_add, test_list_add_to_exist_list);
 	
 	suite_add_tcase(s, tc_list_add);
 
