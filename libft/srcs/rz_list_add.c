@@ -5,7 +5,7 @@ struct s_rz_list *rz_list_add(struct s_rz_list **h, const void *d, size_t n)
 	struct s_rz_list	*node;
 	struct s_rz_list	*last;
 
-	if (h == NULL)
+	if (h == NULL || d == NULL)
 		return (NULL);
 	node = ft_memalloc(sizeof(struct s_rz_list));
 	if (node == NULL)
