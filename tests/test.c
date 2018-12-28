@@ -48,6 +48,19 @@ START_TEST(test_list_add_null_data)
 }
 END_TEST
 
+START_TEST(test_list_add_zero_n)
+{
+	struct s_rz_list	*node;
+
+	node = rz_list_add(&head, "hi", 0);
+	ck_assert_ptr_null(node);
+	ck_assert_ptr_nonnull(head);
+	ck_assert_ptr_null(head->next);
+	ck_assert_ptr_ne(head->data, head_data);
+	ck_assert_mem_eq(head->data, head_data, sizeof head_data);
+}
+END_TEST
+
 START_TEST(test_list_add_to_exist_list)
 {
 	struct s_rz_list	*node;
@@ -153,6 +166,7 @@ Suite *list_suite(void)
 	tcase_add_checked_fixture(tc_list_add, setup_add_list, teardown_add_list);
 	tcase_add_test(tc_list_add, test_list_add_to_empty_list);
 	tcase_add_test(tc_list_add, test_list_add_null_data);
+	tcase_add_test(tc_list_add, test_list_add_zero_n);
 	tcase_add_test(tc_list_add, test_list_add_to_exist_list);
 	tcase_add_test(tc_list_add, test_list_add_two_element_list);
 
