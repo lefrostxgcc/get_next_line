@@ -14,6 +14,15 @@ START_TEST(test_line_negative_fd)
 }
 END_TEST
 
+START_TEST(test_line_null_line)
+{
+	int		result;
+
+	result = get_next_line(0, NULL);
+	ck_assert_int_eq(result, -1);
+}
+END_TEST
+
 Suite *line_suite(void)
 {
 	Suite *s;
@@ -22,6 +31,9 @@ Suite *line_suite(void)
 	s = suite_create("Line");
 	tc_line_error_params = tcase_create("Line error params");
 	tcase_add_test(tc_line_error_params, test_line_negative_fd);
+	tcase_add_test(tc_line_error_params, test_line_null_line);
+
+	tc_line_error_params = tcase_create("Line one buf size");
 
 	suite_add_tcase(s, tc_line_error_params);
 
