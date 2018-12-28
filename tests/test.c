@@ -40,6 +40,9 @@ START_TEST(test_list_add_to_exist_list)
 	ck_assert_ptr_ne(node->data, data);
 	ck_assert_mem_eq(node->data, data, sizeof data);
 	ck_assert_mem_eq(head->data, head_data, sizeof head_data);
+	free(node->data);
+	free(node);
+	node = NULL;
 }
 END_TEST
 
