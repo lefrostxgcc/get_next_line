@@ -52,6 +52,15 @@ START_TEST(test_list_free_null_head_param)
 }
 END_TEST
 
+START_TEST(test_list_free_null_head)
+{
+	struct s_rz_list	*head;
+
+	head = NULL;
+	rz_list_free(&head);
+}
+END_TEST
+
 Suite *list_suite(void)
 {
 	Suite *s;
@@ -66,6 +75,7 @@ Suite *list_suite(void)
 
 	tc_list_free = tcase_create("List free");
 	tcase_add_test(tc_list_free, test_list_free_null_head_param);
+	tcase_add_test(tc_list_free, test_list_free_null_head);
 	
 	suite_add_tcase(s, tc_list_add);
 	suite_add_tcase(s, tc_list_free);
