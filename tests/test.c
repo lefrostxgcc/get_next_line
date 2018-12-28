@@ -17,6 +17,15 @@ void teardown_add_list(void)
 	head = NULL;
 }
 
+START_TEST(test_list_add_head_null)
+{
+	struct s_rz_list	*node;
+
+	node = rz_list_add(NULL, head_data, sizeof head_data);
+	ck_assert_ptr_null(node);
+}
+END_TEST
+
 START_TEST(test_list_add_to_empty_list)
 {
 	ck_assert_ptr_nonnull(head);
@@ -120,9 +129,13 @@ Suite *list_suite(void)
 {
 	Suite *s;
 	TCase *tc_list_add;
+	TCase *tc_list_add_head_null;
 	TCase *tc_list_free;
 
 	s = suite_create("List");
+	tc_list_add_head_null = tcase_create("List add head null");
+	tcase_add_test(tc_list_add_head_null, test_list_add_head_null);
+
 	tc_list_add = tcase_create("List add");
 	tcase_add_checked_fixture(tc_list_add, setup_add_list, teardown_add_list);
 	tcase_add_test(tc_list_add, test_list_add_to_empty_list);
@@ -135,6 +148,7 @@ Suite *list_suite(void)
 	tcase_add_test(tc_list_free, test_list_free_one_element_list);
 	tcase_add_test(tc_list_free, test_list_free_multi_element_list);
 
+	suite_add_tcase(s, tc_list_add_head_null);
 	suite_add_tcase(s, tc_list_add);
 	suite_add_tcase(s, tc_list_free);
 
