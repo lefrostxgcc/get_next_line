@@ -46,6 +46,36 @@ START_TEST(test_list_add_to_exist_list)
 }
 END_TEST
 
+START_TEST(test_list_add_two_element_list)
+{
+	struct s_rz_list	*node1;
+	const char			data1[] = "World";
+	struct s_rz_list	*node2;
+	const char			data2[] = "Good";
+
+	node1 = node2 = NULL;
+	node1 = rz_list_add(&head, data1, sizeof data1);
+	node2 = rz_list_add(&head, data2, sizeof data2);
+
+	ck_assert_ptr_nonnull(head);
+	ck_assert_ptr_nonnull(node1);
+	ck_assert_ptr_nonnull(node2);
+	ck_assert_ptr_nonnull(node1->next);
+	ck_assert_ptr_null(node2->next);
+	ck_assert_ptr_eq(head->next, node1);
+	ck_assert_ptr_ne(node1->data, data1);
+	ck_assert_ptr_eq(head->next->next, node2);
+	ck_assert_ptr_ne(node2->data, data2);
+	ck_assert_mem_eq(node1->data, data1, sizeof data1);
+	ck_assert_mem_eq(node2->data, data2, sizeof data2);
+	ck_assert_mem_eq(head->data, head_data, sizeof head_data);
+	free(node2->data);
+	free(node2);
+	free(node1->data);
+	free(node1);
+}
+END_TEST
+
 START_TEST(test_list_free_null_head_param)
 {
 	rz_list_free(NULL);
@@ -97,6 +127,7 @@ Suite *list_suite(void)
 	tcase_add_checked_fixture(tc_list_add, setup_add_list, teardown_add_list);
 	tcase_add_test(tc_list_add, test_list_add_to_empty_list);
 	tcase_add_test(tc_list_add, test_list_add_to_exist_list);
+	tcase_add_test(tc_list_add, test_list_add_two_element_list);
 
 	tc_list_free = tcase_create("List free");
 	tcase_add_test(tc_list_free, test_list_free_null_head_param);
