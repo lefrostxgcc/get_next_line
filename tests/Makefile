@@ -2,18 +2,24 @@ CFLAGS = -Wall -Wextra -Werror -DUNIT_TEST `pkg-config --cflags check`
 
 HEADERS := ../libft/includes/libft.h
 SRCS := $(wildcard *.c)
-LDADD := ../libft/libft.a `pkg-config --libs check`
+LIBFT := ../libft/libft.a
+LDADD := `pkg-config --libs check`
 
 OBJS = $(SRCS:.c=.o)
 
 TARGET = test
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re force
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(LIBFT)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDADD)
+
+$(LIBFT): force
+	$(MAKE) -C ../libft
+
+force:
 
 $(OBJS) : $(HEADERS)
 
