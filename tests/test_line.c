@@ -61,6 +61,7 @@ START_TEST(test_line_one_buf_one_line)
 	result = get_next_line(file, &line, rz_read);
 	ck_assert_int_eq(result, 1);
 	ck_assert_pstr_eq(line, "hello");
+	free(line);
 	rz_close_fd(file);
 }
 END_TEST
@@ -78,6 +79,7 @@ START_TEST(test_line_one_buf_one_line_without_lf)
 	result = get_next_line(file, &line, rz_read);
 	ck_assert_int_eq(result, 1);
 	ck_assert_pstr_eq(line, "hello");
+	free(line);
 	rz_close_fd(file);
 }
 END_TEST
@@ -100,6 +102,8 @@ START_TEST(test_line_one_buf_two_line)
 	ck_assert_pstr_eq(line_abc, "abc");
 	ck_assert_int_eq(result_de, 0);
 	ck_assert_pstr_eq(line_de, "de");
+	free(line_de);
+	free(line_abc);
 	rz_close_fd(file);
 }
 END_TEST
