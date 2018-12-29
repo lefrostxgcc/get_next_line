@@ -141,6 +141,28 @@ START_TEST(test_line_one_buf_three_line)
 }
 END_TEST
 
+START_TEST(test_line_two_buf_one_line)
+{
+	struct	s_rz_file	*file;
+	char				*line;
+	int					result;
+	char				buf[] =
+	{
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'A', 'B', 'C', 'D', 'E', 'F', '0', '1', '2', '3', '\n', EOF
+	};
+
+	file = rz_open_fd(1);
+	rz_set_read_buf(file, buf, sizeof buf);
+	line = NULL;
+	result = get_next_line(file, &line, rz_read);
+	ck_assert_int_eq(result, 1);
+	ck_assert_pstr_eq(line, "0123456789ABCDEF0123");
+	free(line);
+	rz_close_fd(file);
+}
+END_TEST
+
 Suite *line_suite(void)
 {
 	Suite *s;
@@ -158,6 +180,7 @@ Suite *line_suite(void)
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_one_line_without_lf);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_two_line);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_three_line);
+	tcase_add_test(tc_line_one_buf, test_line_two_buf_one_line);
 
 	suite_add_tcase(s, tc_line_error_params);
 	suite_add_tcase(s, tc_line_one_buf);
