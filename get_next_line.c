@@ -38,7 +38,7 @@ int		get_next_line(struct s_rz_file *file, char **line,
 		*line = ft_strnew(bytes_read);
 		memcpy(*line, buf + pos, bytes_read);
 		pos += bytes_read + 1;
-		return (0);
+		return (1);
 	}
 
 	r1:bytes_read = pfread(file, buf, BUFF_SIZE);
