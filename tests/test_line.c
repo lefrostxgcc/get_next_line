@@ -104,6 +104,39 @@ START_TEST(test_line_one_buf_two_line)
 }
 END_TEST
 
+START_TEST(test_line_one_buf_three_line)
+{
+	struct	s_rz_file	*file;
+	char				*line_abc;
+	char				*line_de;
+	char				*line_fgh;
+	int					result_abc;
+	int					result_de;
+	int					result_fgh;
+	char				buf[] =
+	{
+		'a', 'b', 'c', '\n', 'd', 'e', '\n', 'f', 'g', 'h', '\n', EOF
+	};
+
+	file = rz_open_fd(1);
+	rz_set_read_buf(file, buf, sizeof buf);
+	line_abc = line_de = line_fgh = NULL;
+	result_abc = get_next_line(file, &line_abc, rz_read);
+	result_de = get_next_line(file, &line_de, rz_read);
+	result_fgh = get_next_line(file, &line_fgh, rz_read);
+	ck_assert_int_eq(result_abc, 1);
+	ck_assert_pstr_eq(line_abc, "abc");
+	ck_assert_int_eq(result_de, 0);
+	ck_assert_pstr_eq(line_de, "de");
+	ck_assert_int_eq(result_fgh, 0);
+	ck_assert_pstr_eq(line_fgh, "fgh");
+	free(line_fgh);
+	free(line_de);
+	free(line_abc);
+	rz_close_fd(file);
+}
+END_TEST
+
 Suite *line_suite(void)
 {
 	Suite *s;
@@ -120,6 +153,7 @@ Suite *line_suite(void)
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_one_line);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_one_line_without_lf);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_two_line);
+	tcase_add_test(tc_line_one_buf, test_line_one_buf_three_line);
 
 	suite_add_tcase(s, tc_line_error_params);
 	suite_add_tcase(s, tc_line_one_buf);
