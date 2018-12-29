@@ -3,35 +3,62 @@
 #include "libft/includes/libft.h"
 #include "get_next_line.h"
 
+struct s_rz_string
+{
+	char 	str[BUFF_SIZE];
+	size_t	n;
+};
+
+static char *rz_listcpy(struct s_rz_list *head, char *line)
+{
+	struct s_rz_string	*node;
+
+	while (head != NULL)
+	{
+		node = (struct s_rz_string *) head->data;
+		memcpy(line, node->str, node->n);
+		line += node->n;
+		head = head->next;
+	}
+	return (line);
+}
+
+static void addlist(struct s_rz_list **head, char *line, int size)
+{
+	struct s_rz_string	node;
+
+	memcpy(node.str, line, size);
+	node.n = size;
+	rz_list_add(head, &node, sizeof node);
+}
+
 int		get_next_line(struct s_rz_file *file, char **line,
 						ssize_t (*pfread)(struct s_rz_file *, void *, size_t))
 {
 	static char	buf[BUFF_SIZE];
-	static char	buf_temp[BUFF_SIZE];
 	static int	buf_sz;
 	static int	pos = BUFF_SIZE;
-	int			ppos;
 	ssize_t		bytes_read;
 	char		*lf_pos;
 	int 		p_size;
 	struct s_rz_list *head;
-	struct s_rz_list *curr;
 	char		*p;
-	int			list_n;
+	char		*p_start;
 
 	if (file == NULL || file->fd < 0 || line == NULL)
 		return (-1);
 
 	head = NULL;
-	list_n = 0;
 	buf_sz = 0;
+	p_size = 0;
 	if (pos < BUFF_SIZE)
 	{
 		lf_pos = ft_strchr(buf + pos, '\n');
 		if (lf_pos == NULL)
 		{
 			buf_sz = buf + BUFF_SIZE - (buf + pos);
-			memcpy(buf_temp, buf + pos, buf_sz);
+			addlist(&head, buf + pos, buf_sz);
+			p_size += buf_sz;
 			goto r1;
 		}
 		bytes_read = lf_pos - (buf + pos);
@@ -48,59 +75,36 @@ int		get_next_line(struct s_rz_file *file, char **line,
 		*line = NULL;
 		return (0);
 	}
-	else
+
+	lf_pos = ft_strchr(buf, '\n');
+	if (lf_pos == NULL)
 	{
-		lf_pos = ft_strchr(buf, '\n');
-		if (lf_pos == NULL)
+		if (bytes_read < BUFF_SIZE)
 		{
-			if (bytes_read < BUFF_SIZE)
-			{
-				*line = ft_strnew(bytes_read);
-				memcpy(*line, buf, bytes_read);
-				return (1);
-			}
-			rz_list_add(&head, buf, BUFF_SIZE);
-			list_n++;
-			goto r1;
+			*line = ft_strnew(bytes_read);
+			memcpy(*line, buf, bytes_read);
+			return (1);
 		}
-		if (lf_pos != NULL)
-		{
-			bytes_read = lf_pos - buf;
-			pos += bytes_read + 1;
-			if (!head && buf_sz == 0)
-			{
-				*line = ft_strnew(bytes_read);
-				ft_memcpy(*line, buf, bytes_read);
-				return (1);
-			}
-			ppos = 0;
-			p_size = bytes_read;
-			if (buf_sz > 0)
-				p_size += buf_sz;
-			if (head)
-				p_size += list_n * BUFF_SIZE;
-			if (buf_sz || head)
-				p = ft_strnew(p_size);
-			if (buf_sz > 0)
-			{
-				ft_memcpy(p, buf_temp, buf_sz);
-				*line = p;
-				ppos += buf_sz;
-			}
-			if (head)
-			{
-				curr = head;
-				while (curr != NULL)
-				{
-					memcpy(p + ppos, curr->data, BUFF_SIZE);
-					ppos += BUFF_SIZE;
-					curr = curr->next;
-				}
-				rz_list_free(&head);
-			}
-			memcpy(p + ppos, buf, bytes_read);				
-			*line = p;
-		}
+		addlist(&head, buf, BUFF_SIZE);
+		p_size += BUFF_SIZE;
+		goto r1;
 	}
+
+	bytes_read = lf_pos - buf;
+	pos += bytes_read + 1;
+	if (!head)
+	{
+		*line = ft_strnew(bytes_read);
+		ft_memcpy(*line, buf, bytes_read);
+		return (1);
+	}
+	p_size += bytes_read;
+	p_start = NULL;
+	p_start = ft_strnew(p_size);
+	p = p_start;
+	p = rz_listcpy(head, p);
+	rz_list_free(&head);
+	memcpy(p, buf, bytes_read);				
+	*line = p_start;
 	return (1);
 }
