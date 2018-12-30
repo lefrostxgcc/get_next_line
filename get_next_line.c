@@ -78,7 +78,7 @@ static int in_buf(t_rz_list **head, char **s, char *buf, int *pos, int b_read)
 }
 
 static ssize_t read_until_lf(t_rz_list **head, const int fd,
-	char *buf, int *pos, int *eof)
+	char *buf, int *pos)
 {
 	ssize_t		bytes_read;
 	char		*lf_pos;
@@ -91,7 +91,6 @@ static ssize_t read_until_lf(t_rz_list **head, const int fd,
 			if (bytes_read < BUFF_SIZE)
 			{
 				*pos = bytes_read;
-				*eof = 1;
 				break;
 			}
 			addlist(head, buf, BUFF_SIZE);
@@ -112,7 +111,6 @@ int		get_next_line(const int fd, char **line)
 	static int	bytes_read = 0;
 	struct s_rz_list *head;
 	char		*p;
-	int			eof;
 
 	if (fd < 0 || line == NULL)
 		return (-1);
@@ -120,8 +118,7 @@ int		get_next_line(const int fd, char **line)
 	head = NULL;
 	if (in_buf(&head, line, buf, &pos, bytes_read))
 		return (1);
-	eof = 0;
-	bytes_read = read_until_lf(&head, fd, buf, &pos, &eof);
+	bytes_read = read_until_lf(&head, fd, buf, &pos);
 	if (bytes_read == -1 || bytes_read == 0)
 	{
 		*line = NULL;
@@ -132,12 +129,6 @@ int		get_next_line(const int fd, char **line)
 	if (p == NULL)
 		return (-1);
 	memcpy(p, buf, pos);
-	if (eof)
-	{
-		pos = BUFF_SIZE;
-		bytes_read = 0;
-	}
-	else
-		pos++;
+	pos++;
 	return (1);
 }
