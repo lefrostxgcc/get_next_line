@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "libft/includes/libft.h"
 #include "get_next_line.h"
+#include "tests/read.h"
 
 struct s_rz_string
 {
@@ -10,6 +11,8 @@ struct s_rz_string
 };
 
 typedef struct s_rz_list t_rz_list;
+
+static ssize_t (*pfread)(const int, void *, size_t) = rz_read;
 
 static char *rz_listcpy(struct s_rz_list *head, char **line, int bytes_read)
 {
@@ -74,14 +77,13 @@ static int in_buf(t_rz_list **head, char **s, char *buf, int *pos, int b_read)
 	}
 }
 
-static ssize_t read_until_lf(t_rz_list **head, struct s_rz_file *file,
-	char *buf, ssize_t (*pfread)(struct s_rz_file *, void *, size_t),
-	int *pos, int *eof)
+static ssize_t read_until_lf(t_rz_list **head, const int fd,
+	char *buf, int *pos, int *eof)
 {
 	ssize_t		bytes_read;
 	char		*lf_pos;
 
-	while ((bytes_read = pfread(file, buf, BUFF_SIZE)) > 0)
+	while ((bytes_read = pfread(fd, buf, BUFF_SIZE)) > 0)
 	{
 		lf_pos = ft_strchr(buf, '\n');
 		if (lf_pos == NULL)
@@ -103,8 +105,7 @@ static ssize_t read_until_lf(t_rz_list **head, struct s_rz_file *file,
 	return (bytes_read);
 }
 
-int		get_next_line(struct s_rz_file *file, char **line,
-						ssize_t (*pfread)(struct s_rz_file *, void *, size_t))
+int		get_next_line(const int fd, char **line)
 {
 	static char	buf[BUFF_SIZE];
 	static int	pos = BUFF_SIZE;
@@ -113,14 +114,14 @@ int		get_next_line(struct s_rz_file *file, char **line,
 	char		*p;
 	int			eof;
 
-	if (file == NULL || file->fd < 0 || line == NULL)
+	if (fd < 0 || line == NULL)
 		return (-1);
 
 	head = NULL;
 	if (in_buf(&head, line, buf, &pos, bytes_read))
 		return (1);
 	eof = 0;
-	bytes_read = read_until_lf(&head, file, buf, pfread, &pos, &eof);
+	bytes_read = read_until_lf(&head, fd, buf, &pos, &eof);
 	if (bytes_read == -1 || bytes_read == 0)
 	{
 		*line = NULL;

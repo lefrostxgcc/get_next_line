@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include "read.h"
 
+static struct s_rz_file *file;
+
 struct s_rz_file *rz_open_fd(int fd)
 {
-	struct s_rz_file *file;
-
+	(void) fd;
 	file = (struct s_rz_file *) malloc(sizeof(struct s_rz_file));
 	if (file == NULL)
 		return (NULL);
@@ -16,35 +17,35 @@ struct s_rz_file *rz_open_fd(int fd)
 	return (file);
 }
 
-void rz_set_read_buf(struct s_rz_file *file, char *buf, int n)
+void rz_set_read_buf(struct s_rz_file *f, char *buf, int n)
 {
-	if (file == NULL)
+	if (f == NULL)
 		return;
 	if (buf == NULL || n == 0)
 	{
-		free(file->buf);
-		file->buf = NULL;
-		file->size = n;
-		file->pos = 0;
+		free(f->buf);
+		f->buf = NULL;
+		f->size = n;
+		f->pos = 0;
 	}
 	else
 	{
-		if (file->buf != NULL)
-			free(file->buf);
-		file->buf = (char *) malloc(sizeof(char) * n);
-		memcpy(file->buf, buf, n);
-		file->size = n;
-		file->pos = 0;
+		if (f->buf != NULL)
+			free(f->buf);
+		f->buf = (char *) malloc(sizeof(char) * n);
+		memcpy(f->buf, buf, n);
+		f->size = n;
+		f->pos = 0;
 	}
 }
 
-ssize_t rz_read(struct s_rz_file *file, void *buf, size_t count)
+ssize_t rz_read(const int fd, void *buf, size_t count)
 {
 	size_t		bytes_in_buf;
 	size_t		bytes_read;
 	size_t		EOF_pos;
 
-	if (file == NULL)
+	if (fd < 0)
 		return -1;
 	bytes_in_buf = file->size - file->pos;
 	if (bytes_in_buf <= 0)
@@ -65,8 +66,8 @@ ssize_t rz_read(struct s_rz_file *file, void *buf, size_t count)
 	return bytes_read;
 }
 
-void rz_close_fd(struct s_rz_file *file)
+void rz_close_fd(struct s_rz_file *f)
 {
-	free(file->buf);
-	free(file);
+	free(f->buf);
+	free(f);
 }

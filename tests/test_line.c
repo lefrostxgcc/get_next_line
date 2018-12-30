@@ -12,7 +12,7 @@ START_TEST(test_line_negative_fd)
 
 	file = rz_open_fd(-1);
 	line = NULL;
-	result = get_next_line(file, &line, rz_read);
+	result = get_next_line(file->fd, &line);
 	ck_assert_int_eq(result, -1);
 	ck_assert_ptr_null(line);
 	rz_close_fd(file);
@@ -25,7 +25,7 @@ START_TEST(test_line_null_line)
 	int					result;
 
 	file = rz_open_fd(0);
-	result = get_next_line(file, NULL, rz_read);
+	result = get_next_line(file->fd, NULL);
 	ck_assert_int_eq(result, -1);
 	rz_close_fd(file);
 }
@@ -41,7 +41,7 @@ START_TEST(test_line_empty_buf)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line = NULL;
-	result = get_next_line(file, &line, rz_read);
+	result = get_next_line(file->fd, &line);
 	ck_assert_int_eq(result, 0);
 	ck_assert_ptr_null(line);
 	rz_close_fd(file);
@@ -58,7 +58,7 @@ START_TEST(test_line_one_buf_one_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line = NULL;
-	result = get_next_line(file, &line, rz_read);
+	result = get_next_line(file->fd, &line);
 	ck_assert_int_eq(result, 1);
 	ck_assert_pstr_eq(line, "hello");
 	free(line);
@@ -76,7 +76,7 @@ START_TEST(test_line_one_buf_one_line_without_lf)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line = NULL;
-	result = get_next_line(file, &line, rz_read);
+	result = get_next_line(file->fd, &line);
 	ck_assert_int_eq(result, 1);
 	ck_assert_pstr_eq(line, "hello");
 	free(line);
@@ -96,8 +96,8 @@ START_TEST(test_line_one_buf_two_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line_abc = line_de = NULL;
-	result_abc = get_next_line(file, &line_abc, rz_read);
-	result_de = get_next_line(file, &line_de, rz_read);
+	result_abc = get_next_line(file->fd, &line_abc);
+	result_de = get_next_line(file->fd, &line_de);
 	ck_assert_int_eq(result_abc, 1);
 	ck_assert_pstr_eq(line_abc, "abc");
 	ck_assert_int_eq(result_de, 1);
@@ -125,9 +125,9 @@ START_TEST(test_line_one_buf_three_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line_abc = line_de = line_fgh = NULL;
-	result_abc = get_next_line(file, &line_abc, rz_read);
-	result_de = get_next_line(file, &line_de, rz_read);
-	result_fgh = get_next_line(file, &line_fgh, rz_read);
+	result_abc = get_next_line(file->fd, &line_abc);
+	result_de = get_next_line(file->fd, &line_de);
+	result_fgh = get_next_line(file->fd, &line_fgh);
 	ck_assert_int_eq(result_abc, 1);
 	ck_assert_pstr_eq(line_abc, "abc");
 	ck_assert_int_eq(result_de, 1);
@@ -155,7 +155,7 @@ START_TEST(test_line_two_buf_one_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line = NULL;
-	result = get_next_line(file, &line, rz_read);
+	result = get_next_line(file->fd, &line);
 	ck_assert_int_eq(result, 1);
 	ck_assert_pstr_eq(line, "0123456789ABCDEF0123");
 	free(line);
@@ -179,8 +179,8 @@ START_TEST(test_line_two_buf_two_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line1 = line2 = NULL;
-	result1 = get_next_line(file, &line1, rz_read);
-	result2 = get_next_line(file, &line2, rz_read);
+	result1 = get_next_line(file->fd, &line1);
+	result2 = get_next_line(file->fd, &line2);
 	ck_assert_int_eq(result1, 1);
 	ck_assert_pstr_eq(line1, "0123456789");
 	ck_assert_int_eq(result2, 1);
@@ -208,8 +208,8 @@ START_TEST(test_line_four_buf_two_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line1 = line2 = NULL;
-	result1 = get_next_line(file, &line1, rz_read);
-	result2 = get_next_line(file, &line2, rz_read);
+	result1 = get_next_line(file->fd, &line1);
+	result2 = get_next_line(file->fd, &line2);
 	ck_assert_int_eq(result1, 1);
 	ck_assert_pstr_eq(line1, "0123456789");
 	ck_assert_int_eq(result2, 1);
@@ -240,9 +240,9 @@ START_TEST(test_line_four_buf_three_line)
 	file = rz_open_fd(1);
 	rz_set_read_buf(file, buf, sizeof buf);
 	line1 = line2 = line3 = NULL;
-	result1 = get_next_line(file, &line1, rz_read);
-	result2 = get_next_line(file, &line2, rz_read);
-	result3 = get_next_line(file, &line3, rz_read);
+	result1 = get_next_line(file->fd, &line1);
+	result2 = get_next_line(file->fd, &line2);
+	result3 = get_next_line(file->fd, &line3);
 	ck_assert_int_eq(result1, 1);
 	ck_assert_pstr_eq(line1, "0123456789");
 	ck_assert_int_eq(result2, 1);
