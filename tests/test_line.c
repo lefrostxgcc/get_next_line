@@ -256,6 +256,94 @@ START_TEST(test_line_four_buf_three_line)
 }
 END_TEST
 
+START_TEST(test_line_one_buf_three_empty_line)
+{
+	struct	s_rz_file	*file;
+	char				*line_abc;
+	char				*line_de;
+	char				*line_fgh;
+	char				*line_eof;
+	int					result_abc;
+	int					result_de;
+	int					result_fgh;
+	int					result_eof;
+	char				buf[] =
+	{
+		'\n', '\n', '\n', EOF
+	};
+
+	file = rz_open_fd(1);
+	rz_set_read_buf(file, buf, sizeof buf);
+	line_abc = line_de = line_fgh = line_eof = NULL;
+	result_abc = get_next_line(file->fd, &line_abc);
+	result_de = get_next_line(file->fd, &line_de);
+	result_fgh = get_next_line(file->fd, &line_fgh);
+	result_eof = get_next_line(file->fd, &line_eof);
+	ck_assert_int_eq(result_abc, 1);
+	ck_assert_pstr_eq(line_abc, "");
+	ck_assert_int_eq(result_de, 1);
+	ck_assert_pstr_eq(line_de, "");
+	ck_assert_int_eq(result_fgh, 1);
+	ck_assert_pstr_eq(line_fgh, "");
+	ck_assert_int_eq(result_eof, 0);
+	ck_assert_ptr_null(line_eof);
+	free(line_fgh);
+	free(line_de);
+	free(line_abc);
+	rz_close_fd(file);
+}
+END_TEST
+
+START_TEST(test_line_one_buf_line_three_empty_line)
+{
+	struct	s_rz_file	*file;
+	char				*line;
+	char				*line_abc;
+	char				*line_de;
+	char				*line_fgh;
+	char				*line_ab;
+	char				*line_eof;
+	int					result;
+	int					result_abc;
+	int					result_de;
+	int					result_fgh;
+	int					result_ab;
+	int					result_eof;
+	char				buf[] =
+	{
+		'1', '2', '3', '\n', '\n', '\n', '\n', 'a', 'b', EOF
+	};
+
+	file = rz_open_fd(1);
+	rz_set_read_buf(file, buf, sizeof buf);
+	line = line_abc = line_de = line_fgh = line_ab = line_eof = NULL;
+	result = get_next_line(file->fd, &line);
+	result_abc = get_next_line(file->fd, &line_abc);
+	result_de = get_next_line(file->fd, &line_de);
+	result_fgh = get_next_line(file->fd, &line_fgh);
+	result_ab = get_next_line(file->fd, &line_ab);
+	result_eof = get_next_line(file->fd, &line_eof);
+	ck_assert_int_eq(result, 1);
+	ck_assert_pstr_eq(line, "123");
+	ck_assert_int_eq(result_abc, 1);
+	ck_assert_pstr_eq(line_abc, "");
+	ck_assert_int_eq(result_de, 1);
+	ck_assert_pstr_eq(line_de, "");
+	ck_assert_int_eq(result_fgh, 1);
+	ck_assert_pstr_eq(line_fgh, "");
+	ck_assert_int_eq(result_ab, 1);
+	ck_assert_pstr_eq(line_ab, "ab");
+	ck_assert_int_eq(result_eof, 0);
+	ck_assert_ptr_null(line_eof);
+	free(line);
+	free(line_fgh);
+	free(line_de);
+	free(line_abc);
+	free(line_ab);
+	rz_close_fd(file);
+}
+END_TEST
+
 Suite *line_suite(void)
 {
 	Suite *s;
@@ -277,6 +365,8 @@ Suite *line_suite(void)
 	tcase_add_test(tc_line_one_buf, test_line_two_buf_two_line);
 	tcase_add_test(tc_line_one_buf, test_line_four_buf_two_line);
 	tcase_add_test(tc_line_one_buf, test_line_four_buf_three_line);
+	tcase_add_test(tc_line_one_buf, test_line_one_buf_three_empty_line);
+	tcase_add_test(tc_line_one_buf, test_line_one_buf_line_three_empty_line);
 
 	suite_add_tcase(s, tc_line_error_params);
 	suite_add_tcase(s, tc_line_one_buf);

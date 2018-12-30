@@ -53,7 +53,7 @@ static int load_from_buf(t_rz_list **head, char **s, char *buf, int n, int *pos)
 	char						*lf;
 	int							line_len;
 
-	if (n <= 0)
+	if (n <= 0 || *pos >= n)
 		return (0);
 	lf = ft_strchr(buf + *pos, '\n');
 	if (lf)
@@ -73,7 +73,6 @@ static int load_from_buf(t_rz_list **head, char **s, char *buf, int n, int *pos)
 		return (0);
 	}
 }
-
 static ssize_t read_until_lf(t_rz_list **head, int fd, char *buf, int *lf_pos)
 {
 	static struct s_rz_string	node;
@@ -110,7 +109,7 @@ int		get_next_line(const int fd, char **line)
 	if (load_from_buf(&head, line, buf, bytes_read, &after_lf_pos))
 		return (1);
 	bytes_read = read_until_lf(&head, fd, buf, &lf_pos);
-	if (bytes_read == -1 || bytes_read == 0)
+	if ((bytes_read == -1 || bytes_read == 0) && !head)
 	{
 		*line = 0;
 		rz_list_free(&head);
