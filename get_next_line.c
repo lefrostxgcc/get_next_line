@@ -9,18 +9,35 @@ struct s_rz_string
 	size_t	n;
 };
 
-static char *rz_listcpy(struct s_rz_list *head, char *line)
-{
-	struct s_rz_string	*node;
+typedef struct s_rz_list t_rz_list;
 
-	while (head != NULL)
+static char *rz_listcpy(struct s_rz_list *head, char **line, int bytes_read)
+{
+	struct s_rz_list	*curr;
+	struct s_rz_string	*node;
+	char				*p;
+	int					line_len;
+
+	line_len = bytes_read;
+	curr = head;
+	while (curr != NULL)
 	{
-		node = (struct s_rz_string *) head->data;
-		memcpy(line, node->str, node->n);
-		line += node->n;
-		head = head->next;
+		node = (struct s_rz_string *) curr->data;
+		line_len += node->n;
+		curr = curr->next;
 	}
-	return (line);
+	if ((*line = ft_strnew(line_len)) == NULL)
+		return (NULL);
+	p = *line;
+	curr = head;
+	while (curr != NULL)
+	{
+		node = (struct s_rz_string *) curr->data;
+		memcpy(p, node->str, node->n);
+		p += node->n;
+		curr = curr->next;
+	}
+	return (p);
 }
 
 static void addlist(struct s_rz_list **head, char *line, int size)
@@ -32,79 +49,94 @@ static void addlist(struct s_rz_list **head, char *line, int size)
 	rz_list_add(head, &node, sizeof node);
 }
 
+static int in_buf(t_rz_list **head, char **s, char *buf, int *pos, int b_read)
+{
+	char		*lf_pos;
+	int			len;
+
+	if (*pos >= b_read)
+		return (0);
+	lf_pos = ft_strchr(buf + *pos, '\n');
+	if (lf_pos == NULL)
+	{
+		len = buf + b_read - (buf + *pos);
+		addlist(head, buf + *pos, len);
+		*pos = 0;
+		return (0);
+	}
+	else
+	{
+		len = lf_pos - (buf + *pos);
+		*s = ft_strnew(len);
+		memcpy(*s, buf + *pos, len);
+		*pos += len + 1;
+		return (1);
+	}
+}
+
+static ssize_t read_until_lf(t_rz_list **head, struct s_rz_file *file,
+	char *buf, ssize_t (*pfread)(struct s_rz_file *, void *, size_t),
+	int *pos, int *eof)
+{
+	ssize_t		bytes_read;
+	char		*lf_pos;
+
+	while ((bytes_read = pfread(file, buf, BUFF_SIZE)) > 0)
+	{
+		lf_pos = ft_strchr(buf, '\n');
+		if (lf_pos == NULL)
+		{
+			if (bytes_read < BUFF_SIZE)
+			{
+				*pos = bytes_read;
+				*eof = 1;
+				break;
+			}
+			addlist(head, buf, BUFF_SIZE);
+		}
+		else
+		{
+			*pos = lf_pos - buf;
+			break;
+		}
+	}
+	return (bytes_read);
+}
+
 int		get_next_line(struct s_rz_file *file, char **line,
 						ssize_t (*pfread)(struct s_rz_file *, void *, size_t))
 {
 	static char	buf[BUFF_SIZE];
-	static int	buf_sz;
 	static int	pos = BUFF_SIZE;
-	ssize_t		bytes_read;
-	char		*lf_pos;
-	int 		p_size;
+	static int	bytes_read = 0;
 	struct s_rz_list *head;
 	char		*p;
-	char		*p_start;
+	int			eof;
 
 	if (file == NULL || file->fd < 0 || line == NULL)
 		return (-1);
 
 	head = NULL;
-	buf_sz = 0;
-	p_size = 0;
-	if (pos < BUFF_SIZE)
-	{
-		lf_pos = ft_strchr(buf + pos, '\n');
-		if (lf_pos == NULL)
-		{
-			buf_sz = buf + BUFF_SIZE - (buf + pos);
-			addlist(&head, buf + pos, buf_sz);
-			p_size += buf_sz;
-			goto r1;
-		}
-		bytes_read = lf_pos - (buf + pos);
-		*line = ft_strnew(bytes_read);
-		memcpy(*line, buf + pos, bytes_read);
-		pos += bytes_read + 1;
+	if (in_buf(&head, line, buf, &pos, bytes_read))
 		return (1);
-	}
-
-	r1:bytes_read = pfread(file, buf, BUFF_SIZE);
-	pos = 0;
-	if (bytes_read == 0)
+	eof = 0;
+	bytes_read = read_until_lf(&head, file, buf, pfread, &pos, &eof);
+	if (bytes_read == -1 || bytes_read == 0)
 	{
 		*line = NULL;
-		return (0);
+		return (bytes_read);
 	}
-
-	lf_pos = ft_strchr(buf, '\n');
-	if (lf_pos == NULL)
-	{
-		if (bytes_read < BUFF_SIZE)
-		{
-			*line = ft_strnew(bytes_read);
-			memcpy(*line, buf, bytes_read);
-			return (1);
-		}
-		addlist(&head, buf, BUFF_SIZE);
-		p_size += BUFF_SIZE;
-		goto r1;
-	}
-
-	bytes_read = lf_pos - buf;
-	pos += bytes_read + 1;
-	if (!head)
-	{
-		*line = ft_strnew(bytes_read);
-		ft_memcpy(*line, buf, bytes_read);
-		return (1);
-	}
-	p_size += bytes_read;
-	p_start = NULL;
-	p_start = ft_strnew(p_size);
-	p = p_start;
-	p = rz_listcpy(head, p);
+	p = rz_listcpy(head, line, pos);
 	rz_list_free(&head);
-	memcpy(p, buf, bytes_read);				
-	*line = p_start;
+	if (p == NULL)
+		return (-1);
+	memcpy(p, buf, pos);
+	if (eof)
+	{
+		pos = BUFF_SIZE;
+		bytes_read = 0;
+	}
+	else
+		pos++;
 	return (1);
 }
