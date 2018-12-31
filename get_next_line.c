@@ -6,76 +6,62 @@
 
 static ssize_t (*pfread)(const int, void *, size_t) = rz_read;
 
-static int calc_line_len(t_rz_list *head)
+static int create_line(
+	char **line, char *pbuf, t_rz_list *head, char *buf, int lf_pos)
 {
-	struct s_rz_list		*curr;
-	struct s_rz_string		*node;
-	int						line_len;
-
-	line_len = 0;
-	curr = head;
-	while (curr)
-	{
-		node = (struct s_rz_string *) curr->data;
-		line_len += node->n;
-		curr = curr->next;
-	}
-	return (line_len);
-}
-
-static int create_line(t_rz_list *head, char **line)
-{
-	struct s_rz_list		*curr;
-	struct s_rz_string		*node;
+	t_rz_list				*curr;
 	char					*p;
+	int						pbuf_len;
 
-	if (!(*line = ft_strnew(calc_line_len(head))))
+	pbuf_len = strlen(pbuf);
+	if (!(*line = ft_strnew(pbuf_len + rz_list_size(head) + strlen(buf))))
 	{
 		rz_list_free(&head);
 		return (0);
 	}
 	p = *line;
+	strcpy(p, pbuf);
+	p += pbuf_len;
 	curr = head;
 	while (curr)
 	{
-		node = (struct s_rz_string *) curr->data;
-		memcpy(p, node->str, node->n);
-		p += node->n;
+		memcpy(p, curr->data, BUFF_SIZE);
+		p += BUFF_SIZE;
 		curr = curr->next;
 	}
+	memcpy(p, buf, lf_pos);
 	rz_list_free(&head);
 	return (1);
 }
 
-static int load_from_buf(t_rz_list **head, char **s, char *buf, int n, int *pos)
+static int load_from_buf(char **s, char *pbuf, char *sbuf, int *pos)
 {
-	static struct s_rz_string	node;
 	char						*lf;
 	int							line_len;
+	int							sbuf_len;
 
-	if (n <= 0 || *pos >= n)
+	pbuf[0] = '\0';
+	if ((sbuf_len = strlen(sbuf)) == 0 || *pos >= sbuf_len)
 		return (0);
-	lf = ft_strchr(buf + *pos, '\n');
+	lf = ft_strchr(sbuf + *pos, '\n');
 	if (lf)
 	{
-		line_len = lf - (buf + *pos);
+		line_len = lf - (sbuf + *pos);
 		*s = ft_strnew(line_len);
-		memcpy(*s, buf + *pos, line_len);
+		memcpy(*s, sbuf + *pos, line_len);
 		*pos += line_len + 1;
 		return (1);
 	}
 	else
 	{
-		node.n = buf + n - (buf + *pos);
-		memcpy(node.str, buf + *pos, node.n);
-		rz_list_add(head, &node, sizeof node);
+		strcpy(pbuf, sbuf + *pos);
 		*pos = 0;
 		return (0);
 	}
 }
+
 static ssize_t read_until_lf(t_rz_list **head, int fd, char *buf, int *lf_pos)
 {
-	static struct s_rz_string	node;
 	ssize_t						bytes_read;
 	char						*lf;
 
@@ -83,40 +69,48 @@ static ssize_t read_until_lf(t_rz_list **head, int fd, char *buf, int *lf_pos)
 	{
 		lf = ft_strchr(buf, '\n');
 		if (lf)
-			node.n = lf - buf;
-		else
-			node.n = bytes_read < BUFF_SIZE ? bytes_read : BUFF_SIZE;
-		*lf_pos = node.n;
-		memcpy(node.str, buf, node.n);
-		rz_list_add(head, &node, sizeof node);
-		if (lf || bytes_read < BUFF_SIZE)
+		{
+			*lf_pos = lf - buf;
 			break;
+		}
+		else
+		{
+			if (bytes_read < BUFF_SIZE)
+			{
+				*lf_pos = bytes_read;
+				break;
+			}
+			rz_list_add(head, buf, BUFF_SIZE);
+		}
 	}
+	if (bytes_read >= 0)
+		buf[bytes_read] = '\0';
 	return (bytes_read);
 }
 
 int		get_next_line(const int fd, char **line)
 {
-	static char		buf[BUFF_SIZE];
-	static int		after_lf_pos;
-	static int		bytes_read;
+	static char		prefix_buf[BUFF_SIZE + 1];
+	static char		suffix_buf[BUFF_SIZE + 1];
 	t_rz_list		*head;
+	int				bytes_read;
 	int				lf_pos;
 
 	if (fd < 0 || !line)
 		return (-1);
 	head = 0;
-	if (load_from_buf(&head, line, buf, bytes_read, &after_lf_pos))
+	if (load_from_buf(line, prefix_buf, suffix_buf, &lf_pos))
 		return (1);
-	bytes_read = read_until_lf(&head, fd, buf, &lf_pos);
-	if ((bytes_read == -1 || bytes_read == 0) && !head)
+	bytes_read = read_until_lf(&head, fd, suffix_buf, &lf_pos);
+	if (bytes_read == -1)
 	{
-		*line = 0;
 		rz_list_free(&head);
-		return (bytes_read);
-	}
-	if (!create_line(head, line))
 		return (-1);
-	after_lf_pos = lf_pos + 1;
+	}
+	else if (bytes_read == 0 && prefix_buf[0] == '\0' && !head)
+		return (0);
+	if (!create_line(line, prefix_buf, head, suffix_buf, lf_pos))
+		return (-1);
+	lf_pos++;
 	return (1);
 }
