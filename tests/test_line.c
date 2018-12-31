@@ -4,6 +4,22 @@
 #include "../get_next_line.h"
 #include "read.h"
 
+void setup_eline(void)
+{
+}
+
+void teardown_eline(void)
+{
+}
+
+void setup_line(void)
+{
+}
+
+void teardown_line(void)
+{
+}
+
 START_TEST(test_line_negative_fd)
 {
 	struct	s_rz_file	*file;
@@ -352,10 +368,12 @@ Suite *line_suite(void)
 
 	s = suite_create("Line");
 	tc_line_error_params = tcase_create("Line error params");
+	tcase_add_checked_fixture(tc_line_error_params, setup_eline, teardown_eline);
 	tcase_add_test(tc_line_error_params, test_line_negative_fd);
 	tcase_add_test(tc_line_error_params, test_line_null_line);
 
 	tc_line_one_buf = tcase_create("Line one buf size");
+	tcase_add_checked_fixture(tc_line_one_buf, setup_line, teardown_line);
 	tcase_add_test(tc_line_one_buf, test_line_empty_buf);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_one_line);
 	tcase_add_test(tc_line_one_buf, test_line_one_buf_one_line_without_lf);
