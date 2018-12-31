@@ -16,12 +16,12 @@ static int cat(char **line, char *pbuf, t_rz_list *bufs, char *sbuf, int lf_pos)
 
 	pbuf_len = strlen(pbuf);
 	line_len = pbuf_len + rz_list_size(bufs) * BUFF_SIZE + strlen(sbuf);
-	if (!(*line = ft_strnew(line_len)))
+	if (!(p = ft_strnew(line_len)))
 	{
 		rz_list_free(&bufs);
 		return (0);
 	}
-	p = *line;
+	*line = p;
 	memcpy(p, pbuf, pbuf_len);
 	p += pbuf_len;
 	curr_buf = bufs;
@@ -67,7 +67,6 @@ static ssize_t read_until_lf(int fd, t_rz_list **bufs, char *sbuf, int *lf_pos)
 	char			*lf;
 	ssize_t			bytes_read;
 
-	sbuf[0] = '\0';
 	while ((bytes_read = pfread(fd, sbuf, BUFF_SIZE)) > 0)
 	{
 		lf = ft_strchr(sbuf, '\n');
@@ -98,20 +97,20 @@ int		get_next_line(const int fd, char **line)
 	static char		suffix_buf[BUFF_SIZE + 1];
 	static int		lf_pos;
 	t_rz_list		*middle_bufs;
-	ssize_t			bytes_read;
+	ssize_t			bytes_in_suffix_buf;
 
 	if (fd < 0 || !line)
 		return (-1);
 	if (load_from_suffix_buf(line, prefix_buf, suffix_buf, &lf_pos))
 		return (1);
 	middle_bufs = 0;
-	bytes_read = read_until_lf(fd, &middle_bufs, suffix_buf, &lf_pos);
-	if (bytes_read == -1)
+	bytes_in_suffix_buf = read_until_lf(fd, &middle_bufs, suffix_buf, &lf_pos);
+	if (bytes_in_suffix_buf == -1)
 	{
 		rz_list_free(&middle_bufs);
 		return (-1);
 	}
-	else if (bytes_read == 0 && prefix_buf[0] == '\0' && !middle_bufs)
+	else if (bytes_in_suffix_buf == 0 && prefix_buf[0] == '\0' && !middle_bufs)
 		return (0);
 	if (!cat(line, prefix_buf, middle_bufs, suffix_buf, lf_pos))
 		return (-1);

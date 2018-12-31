@@ -3,7 +3,7 @@
 
 #include "libft/includes/libft.h"
 
-#define BUFF_SIZE	11
+#define BUFF_SIZE	16
 
 struct s_rz_string
 {
