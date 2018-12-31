@@ -1,9 +1,7 @@
 #include <unistd.h>
-#include <stdlib.h>
 #include "libft/includes/libft.h"
 #include "get_next_line.h"
 #include "tests/read.h"
-#include <stdio.h>
 
 static ssize_t (*pfread)(const int, void *, size_t) = rz_read;
 
@@ -14,24 +12,24 @@ static int cat(char **line, char *pbuf, t_rz_list *bufs, char *sbuf, int lf_pos)
 	int				pbuf_len;
 	int				line_len;
 
-	pbuf_len = strlen(pbuf);
-	line_len = pbuf_len + rz_list_size(bufs) * BUFF_SIZE + strlen(sbuf);
+	pbuf_len = ft_strlen(pbuf);
+	line_len = pbuf_len + rz_list_size(bufs) * BUFF_SIZE + ft_strlen(sbuf);
 	if (!(p = ft_strnew(line_len)))
 	{
 		rz_list_free(&bufs);
 		return (0);
 	}
 	*line = p;
-	memcpy(p, pbuf, pbuf_len);
+	ft_memcpy(p, pbuf, pbuf_len);
 	p += pbuf_len;
 	curr_buf = bufs;
 	while (curr_buf)
 	{
-		memcpy(p, curr_buf->data, BUFF_SIZE);
+		ft_memcpy(p, curr_buf->data, BUFF_SIZE);
 		p += BUFF_SIZE;
 		curr_buf = curr_buf->next;
 	}
-	memcpy(p, sbuf, lf_pos);
+	ft_memcpy(p, sbuf, lf_pos);
 	rz_list_free(&bufs);
 	return (1);
 }
@@ -43,20 +41,20 @@ static int load_from_suffix_buf(char **line, char *pbuf, char *sbuf, int *pos)
 	int				sbuf_len;
 
 	pbuf[0] = '\0';
-	if ((sbuf_len = strlen(sbuf)) == 0 || *pos >= sbuf_len)
+	if ((sbuf_len = ft_strlen(sbuf)) == 0 || *pos >= sbuf_len)
 		return (0);
 	lf = ft_strchr(sbuf + *pos, '\n');
 	if (lf)
 	{
 		line_len = lf - (sbuf + *pos);
 		*line = ft_strnew(line_len);
-		memcpy(*line, sbuf + *pos, line_len);
+		ft_memcpy(*line, sbuf + *pos, line_len);
 		*pos += line_len + 1;
 		return (1);
 	}
 	else
 	{
-		strcpy(pbuf, sbuf + *pos);
+		ft_strcpy(pbuf, sbuf + *pos);
 		*pos = 0;
 		return (0);
 	}

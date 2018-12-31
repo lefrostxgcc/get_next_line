@@ -1,4 +1,4 @@
-CFLAGS = -DUNIT_TEST `pkg-config --cflags check`
+CFLAGS = -Wall -Wextra -Werror -DUNIT_TEST `pkg-config --cflags check`
 
 HEADERS := ../libft/includes/libft.h read.h
 LIST_SRCS := test_list.c

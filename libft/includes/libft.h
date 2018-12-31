@@ -8,6 +8,8 @@ struct s_rz_list
 	struct s_rz_list	*next;
 };
 
+typedef struct s_rz_list t_rz_list;
+
 void *	ft_memset(void *s, int c, size_t n);
 void	ft_bzero(void *s, size_t n);
 void *	ft_memcpy(void *dest, void const *src, size_t n);
