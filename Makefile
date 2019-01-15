@@ -1,5 +1,5 @@
 CFLAGS = -Wall -Wextra -Werror
-HEADERS := libft/includes/libft.h get_next_line.h
+HEADERS := libft/libft.h get_next_line.h
 SRCS := get_next_line.c
 OBJS = $(SRCS:.c=.o)
 
