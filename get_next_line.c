@@ -72,35 +72,27 @@ static ssize_t read_until_lf(int fd, t_list **bufs, char *sbuf, int *lf_pos)
 static int	find_line_in_buf(char **line, t_list **l, const char *buf, int *pos)
 {
 	char	*lf;
+	char	*nu;
+	char	*p;
 	int		len;
 
 	if (buf[*pos] == '\0')
 		return (0);
 	lf = ft_strchr(buf + *pos, '\n');
-	if (lf)
+	nu = ft_strchr(buf + *pos, '\0');
+	p = lf ? lf : nu;
+	if (p != buf + BUFF_SIZE)
 	{
-		len = lf - (buf + *pos);
+		len = p - (buf + *pos);
 		*line = ft_strnew(len);
 		ft_memcpy(*line, buf + *pos, len);
-		*pos = *pos + len + 1;
+		*pos = *pos + len + (p == lf ? 1 : 0);
 		return (1);
 	}
 	else
 	{
-		lf = ft_strchr(buf + *pos, '\0');
-		if (lf == buf + BUFF_SIZE)
-		{
-			*l = ft_lstnew(buf + *pos, BUFF_SIZE - *pos);
-			return (0);
-		}
-		else
-		{
-			len = lf - (buf + *pos);
-			*line = ft_strnew(len);
-			ft_memcpy(*line, buf + *pos, len);
-			*pos = *pos + len;
-			return (1);
-		}
+		*l = ft_lstnew(buf + *pos, BUFF_SIZE - *pos);
+		return (0);
 	}
 }
 
@@ -118,7 +110,6 @@ int		get_next_line(const int fd, char **line)
 		return (1);
 	if (pos != 0 && buf[pos] == '\0')
 		return (0);
-	bytes_in_suffix_buf = 0;
 	bytes_in_suffix_buf = read_until_lf(fd, &lst, buf, &pos);
 	if (bytes_in_suffix_buf == 0 && buf[0] == '\0' && !lst)
 		return (0);
