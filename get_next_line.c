@@ -86,35 +86,25 @@ static ssize_t read_until_lf(int fd, t_list **bufs, char *sbuf, int *lf_pos)
 	ssize_t			bytes_read;
 	t_list			*new;
 
+	*lf_pos = 0;
 	while ((bytes_read = pfread(fd, sbuf, BUFF_SIZE)) > 0)
 	{
-		lf = ft_strchr(sbuf, '\n');
-		if (lf)
-		{
-			*lf_pos = lf - sbuf;
+		*lf_pos = (lf = ft_strchr(sbuf, '\n')) ? lf - sbuf : bytes_read;
+		if (lf || bytes_read < BUFF_SIZE)
 			break;
-		}
+		if (*bufs == 0)
+			*bufs = ft_lstnew(sbuf, BUFF_SIZE);
 		else
 		{
-			if (bytes_read < BUFF_SIZE)
-			{
-				*lf_pos = bytes_read >= 0 ? bytes_read : 0;
-				break;
-			}
-			if (*bufs == 0)
-				*bufs = ft_lstnew(sbuf, BUFF_SIZE);
-			else
-			{
-				new = malloc(sizeof (t_list));
-				new->content = malloc(BUFF_SIZE);
-				new->content_size = BUFF_SIZE;
-				ft_memcpy(new->content, sbuf, BUFF_SIZE);
-				ft_lstadd(bufs, new);
-			}
+			if (!(new = ft_memalloc(sizeof (t_list))))
+				return (-1);
+			if (!(new->content = ft_memalloc(BUFF_SIZE)))
+				return (-1);
+			new->content_size = BUFF_SIZE;
+			ft_memcpy(new->content, sbuf, BUFF_SIZE);
+			ft_lstadd(bufs, new);
 		}
 	}
-	if (bytes_read < 0)
-		*lf_pos = 0;
 	sbuf[bytes_read >= 0 ? bytes_read : 0] = '\0';
 	return (bytes_read);
 }
