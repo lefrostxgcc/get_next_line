@@ -12,13 +12,13 @@ static void del_node(void *p, size_t size)
 	free(p);
 }
 
-static int ca(char **line, t_list *bufs, char *buf, int start, int end)
+static int ca(char **line, t_list *bufs, char *buf, int pos)
 {
 	t_list		*curr_buf;
 	char		*p;
 	int			line_len;
 
-	line_len = end - start;
+	line_len = pos;
 	curr_buf = bufs;
 	while (curr_buf)
 	{
@@ -28,8 +28,8 @@ static int ca(char **line, t_list *bufs, char *buf, int start, int end)
 	if (!(p = ft_strnew(line_len)))
 		return (0);
 	*line = p;
-	p += line_len - (end - start);
-	ft_memcpy(p, buf + start, end - start);
+	p += line_len - pos;
+	ft_memcpy(p, buf, pos);
 	curr_buf = bufs;
 	while (curr_buf)
 	{
@@ -69,48 +69,60 @@ static ssize_t read_until_lf(int fd, t_list **bufs, char *sbuf, int *lf_pos)
 	return (bytes_read);
 }
 
-static int	find_line_in_buf(const char *buf, int start, int *end)
+static int	find_line_in_buf(char **line, t_list **l, const char *buf, int *pos)
 {
 	char	*lf;
+	int		len;
 
-	*end = 0;
-	if (buf[start] == '\0')
+	if (buf[*pos] == '\0')
 		return (0);
-	lf = ft_strchr(buf + start, '\n');
+	lf = ft_strchr(buf + *pos, '\n');
 	if (lf)
 	{
-		*end = lf - buf;
+		len = lf - (buf + *pos);
+		*line = ft_strnew(len);
+		ft_memcpy(*line, buf + *pos, len);
+		*pos = *pos + len + 1;
 		return (1);
 	}
 	else
 	{
-		*end = BUFF_SIZE;
-		return (0);
+		lf = ft_strchr(buf + *pos, '\0');
+		if (lf == buf + BUFF_SIZE)
+		{
+			*l = ft_lstnew(buf + *pos, BUFF_SIZE - *pos);
+			return (0);
+		}
+		else
+		{
+			len = lf - (buf + *pos);
+			*line = ft_strnew(len);
+			ft_memcpy(*line, buf + *pos, len);
+			*pos = *pos + len;
+			return (1);
+		}
 	}
 }
 
 int		get_next_line(const int fd, char **line)
 {
 	static char		buf[BUFF_SIZE + 1];
-	static int		start;
-	static int		end;
+	static int		pos;
 	t_list			*lst;
 	int				bytes_in_suffix_buf;
 
 	if (fd < 0 || !line)
 		return (-1);
 	lst = 0;
+	if (find_line_in_buf(line, &lst, buf, &pos))
+		return (1);
+	if (pos != 0 && buf[pos] == '\0')
+		return (0);
 	bytes_in_suffix_buf = 0;
-	if (buf[0] == '\0' || !find_line_in_buf(buf, start, &end))
-	{
-		if (buf[0] != '\0' && end != 0)
-			lst = ft_lstnew(buf + start, end - start);
-		start = 0;
-		bytes_in_suffix_buf = read_until_lf(fd, &lst, buf, &end);
-		if (bytes_in_suffix_buf == 0 && buf[0] == '\0' && !lst)
-			return (0);
-	}
-	if (bytes_in_suffix_buf == -1 || !ca(line, lst, buf, start, end))
+	bytes_in_suffix_buf = read_until_lf(fd, &lst, buf, &pos);
+	if (bytes_in_suffix_buf == 0 && buf[0] == '\0' && !lst)
+		return (0);
+	if (bytes_in_suffix_buf == -1 || !ca(line, lst, buf, pos))
 	{
 		if (lst)
 			ft_lstdel(&lst, del_node);
@@ -118,6 +130,6 @@ int		get_next_line(const int fd, char **line)
 	}
 	if (lst)
 		ft_lstdel(&lst, del_node);
-	start = end + 1;
+	pos++;
 	return (1);
 }
