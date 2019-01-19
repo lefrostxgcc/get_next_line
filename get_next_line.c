@@ -59,6 +59,19 @@ static int add_to_list(t_list **list, const char *buf, int size)
 	return (1);
 }
 
+static void cleanup(char *buf, int *beg, char *end, t_list **lst, int b_read)
+{
+	if (b_read <= 0)
+	{
+		buf[0] = '\0';
+		*beg = 0;
+	}
+	else
+		*beg = end - buf + 1;
+	if (*lst)
+		ft_lstdel(lst, del_node);
+}
+
 int		get_next_line(const int fd, char **line)
 {
 	static char		buf[BUFF_SIZE + 1];
@@ -70,28 +83,19 @@ int		get_next_line(const int fd, char **line)
 	if (fd < 0 || !line)
 		return (-1);
 	lst = 0;
+	bytes_read = 1;
 	while (!(end = ft_strchr(buf + start, '\n')))
 	{
-		if (!add_to_list(&lst, buf + start,
+		if (buf[0] != '\0' && !add_to_list(&lst, buf + start,
 			!start ? bytes_read : BUFF_SIZE - start))
 				return (-1);
 		start = 0;
 		if ((bytes_read = pfread(fd, buf, BUFF_SIZE)) <= 0)
-		{
-			if (lst)
-				ft_lstdel(&lst, del_node);
-			return (bytes_read);
-		}
+			break;
 		buf[bytes_read] = '\0';
 	}
-	if (!ca(line, lst, buf + start, end - (buf + start)))
-	{
-		if (lst)
-			ft_lstdel(&lst, del_node);
-		return (-1);
-	}
-	start = end - buf + 1;
-	if (lst)
-		ft_lstdel(&lst, del_node);
-	return (1);
+	if (bytes_read > 0 && !ca(line, lst, buf + start, end - (buf + start)))
+		bytes_read = -1;
+	cleanup(buf, &start, end, &lst, bytes_read);
+	return (bytes_read > 0 ? 1 : bytes_read);
 }
