@@ -12,115 +12,86 @@ static void del_node(void *p, size_t size)
 	free(p);
 }
 
-static int ca(char **line, t_list *bufs, char *buf, int pos)
+static int ca(char **line, t_list *lst, char *buf, int buflen)
 {
-	t_list		*curr_buf;
+	t_list		*curr;
 	char		*p;
 	int			line_len;
 
-	line_len = pos;
-	curr_buf = bufs;
-	while (curr_buf)
+	line_len = buflen;
+	curr = lst;
+	while (curr)
 	{
-		line_len += curr_buf->content_size;
-		curr_buf = curr_buf->next;
+		line_len += curr->content_size;
+		curr = curr->next;
 	}
 	if (!(p = ft_strnew(line_len)))
 		return (0);
 	*line = p;
-	p += line_len - pos;
-	ft_memcpy(p, buf, pos);
-	curr_buf = bufs;
-	while (curr_buf)
+	p += line_len - buflen;
+	ft_memcpy(p, buf, buflen);
+	curr = lst;
+	while (curr)
 	{
-		p -= curr_buf->content_size;
-		ft_memcpy(p, curr_buf->content, curr_buf->content_size);
-		curr_buf = curr_buf->next;
+		p -= curr->content_size;
+		ft_memcpy(p, curr->content, curr->content_size);
+		curr = curr->next;
 	}
 	return (1);
 }
 
-static ssize_t read_until_lf(int fd, t_list **bufs, char *sbuf, int *lf_pos)
+static int add_to_list(t_list **list, const char *buf, int size)
 {
-	char			*lf;
-	ssize_t			bytes_read;
-	t_list			*new;
+	t_list *new;
 
-	*lf_pos = 0;
-	while ((bytes_read = pfread(fd, sbuf, BUFF_SIZE)) > 0)
-	{
-		*lf_pos = (lf = ft_strchr(sbuf, '\n')) ? lf - sbuf : bytes_read;
-		if (lf || bytes_read < BUFF_SIZE)
-			break;
-		if (*bufs == 0)
-			*bufs = ft_lstnew(sbuf, BUFF_SIZE);
-		else
-		{
-			if (!(new = ft_memalloc(sizeof (t_list))))
-				return (-1);
-			if (!(new->content = ft_memalloc(BUFF_SIZE)))
-				return (-1);
-			new->content_size = BUFF_SIZE;
-			ft_memcpy(new->content, sbuf, BUFF_SIZE);
-			ft_lstadd(bufs, new);
-		}
-	}
-	sbuf[bytes_read >= 0 ? bytes_read : 0] = '\0';
-	return (bytes_read);
-}
-
-static int	find_line_in_buf(char **line, t_list **l, const char *buf, int *pos)
-{
-	char	*lf;
-	char	*nu;
-	char	*p;
-	int		len;
-
-	if (buf[*pos] == '\0')
+	if (!*list)
+		return ((*list = ft_lstnew(buf, size)) ? 1 : 0);
+	if (!(new = ft_memalloc(sizeof (t_list))))
 		return (0);
-	lf = ft_strchr(buf + *pos, '\n');
-	nu = ft_strchr(buf + *pos, '\0');
-	p = lf ? lf : nu;
-	if (p != buf + BUFF_SIZE)
+	if (!(new->content = ft_memalloc(size)))
 	{
-		len = p - (buf + *pos);
-		*line = ft_strnew(len);
-		ft_memcpy(*line, buf + *pos, len);
-		*pos = *pos + len + (p == lf ? 1 : 0);
-		return (1);
-	}
-	else
-	{
-		*l = ft_lstnew(buf + *pos, BUFF_SIZE - *pos);
+		ft_lstdel(list, del_node);
 		return (0);
 	}
+	new->content_size = size;
+	ft_memcpy(new->content, buf, size);
+	ft_lstadd(list, new);
+	return (1);
 }
 
 int		get_next_line(const int fd, char **line)
 {
 	static char		buf[BUFF_SIZE + 1];
-	static int		pos;
+	static int		start;
+	char			*end;
 	t_list			*lst;
-	int				bytes_in_suffix_buf;
+	int				bytes_read;
 
 	if (fd < 0 || !line)
 		return (-1);
 	lst = 0;
-	if (find_line_in_buf(line, &lst, buf, &pos))
-		return (1);
-	if (pos != 0 && buf[pos] == '\0')
-		return (0);
-	bytes_in_suffix_buf = read_until_lf(fd, &lst, buf, &pos);
-	if (bytes_in_suffix_buf == 0 && buf[0] == '\0' && !lst)
-		return (0);
-	if (bytes_in_suffix_buf == -1 || !ca(line, lst, buf, pos))
+	while (!(end = ft_strchr(buf + start, '\n')))
+	{
+		if (!add_to_list(&lst, buf + start,
+			!start ? bytes_read : BUFF_SIZE - start))
+				return (-1);
+		start = 0;
+		if ((bytes_read = pfread(fd, buf, BUFF_SIZE)) <= 0)
+		{
+			if (lst)
+				ft_lstdel(&lst, del_node);
+			return (bytes_read);
+		}
+		buf[bytes_read] = '\0';
+	}
+	if (!ca(line, lst, buf + start, end - (buf + start)))
 	{
 		if (lst)
 			ft_lstdel(&lst, del_node);
 		return (-1);
 	}
+	start = end - buf + 1;
 	if (lst)
 		ft_lstdel(&lst, del_node);
-	pos++;
 	return (1);
 }
