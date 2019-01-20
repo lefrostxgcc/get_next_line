@@ -86,6 +86,8 @@ int		get_next_line(const int fd, char **line)
 	bytes_read = 1;
 	while (!(end = ft_strchr(buf + start, '\n')))
 	{
+		if (buf[start] != '\0' && (end = ft_strchr(buf + start, '\0')) - buf != BUFF_SIZE)
+			break;
 		if (buf[0] != '\0' && !add_to_list(&lst, buf + start,
 			!start ? bytes_read : BUFF_SIZE - start))
 				return (-1);
