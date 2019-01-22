@@ -1,22 +1,20 @@
-#include <unistd.h>
-#include <stdio.h>
 #include "libft/libft.h"
 #include "get_next_line.h"
 #include "tests/read.h"
 
 static ssize_t (*pfread)(const int, void *, size_t) = rz_read;
 
-static void del_node(void *p, size_t size)
+static void free_node(void *p, size_t size)
 {
 	(void) size;
 	free(p);
 }
 
-static int ca(char **line, t_list *lst, char *buf, int buflen)
+static int cat(char **line, t_list *lst, char *buf, long buflen)
 {
 	t_list		*curr;
 	char		*p;
-	int			line_len;
+	long		line_len;
 
 	line_len = buflen;
 	curr = lst;
@@ -25,8 +23,9 @@ static int ca(char **line, t_list *lst, char *buf, int buflen)
 		line_len += curr->content_size;
 		curr = curr->next;
 	}
-	if (!(p = ft_strnew(line_len)))
+	if (!(p = malloc(sizeof (char) * (line_len + 1))))
 		return (0);
+	p[line_len] = '\0';
 	*line = p;
 	p += line_len - buflen;
 	ft_memcpy(p, buf, buflen);
@@ -40,17 +39,17 @@ static int ca(char **line, t_list *lst, char *buf, int buflen)
 	return (1);
 }
 
-static int add_to_list(t_list **list, const char *buf, int size)
+static int cp2lst(t_list **list, const char *buf, long size)
 {
 	t_list *new;
 
 	if (!*list)
 		return ((*list = ft_lstnew(buf, size)) ? 1 : 0);
-	if (!(new = ft_memalloc(sizeof (t_list))))
+	if (!(new = malloc(sizeof (t_list))))
 		return (0);
-	if (!(new->content = ft_memalloc(size)))
+	if (!(new->content = malloc(sizeof (char) * size)))
 	{
-		ft_lstdel(list, del_node);
+		ft_lstdel(list, free_node);
 		return (0);
 	}
 	new->content_size = size;
@@ -59,45 +58,55 @@ static int add_to_list(t_list **list, const char *buf, int size)
 	return (1);
 }
 
-static void cleanup(char *buf, int *beg, char *end, t_list **lst, int b_read)
+static void cleanup(char *buf, long *beg, char *end, t_list **lst, long *n)
 {
-	if (b_read <= 0)
+	if (*n <= 0)
 	{
+		if (*n == 0)
+		{
+			if (buf[*beg] || *lst)
+				*n = 1;
+		}
+		else
+			*n = -1;
 		buf[0] = '\0';
 		*beg = 0;
 	}
 	else
+	{
 		*beg = end - buf + 1;
+		*n = 1;
+	}
 	if (*lst)
-		ft_lstdel(lst, del_node);
+		ft_lstdel(lst, free_node);
 }
 
 int		get_next_line(const int fd, char **line)
 {
-	static char		buf[BUFF_SIZE + 1];
-	static int		start;
+	static char		b[BUFF_SIZE + 1];
+	static long		pos;
 	char			*end;
 	t_list			*lst;
-	int				bytes_read;
+	long			n;
 
 	if (fd < 0 || !line)
 		return (-1);
 	lst = 0;
-	bytes_read = 1;
-	while (!(end = ft_strchr(buf + start, '\n')))
+	n = 1;
+	while (!(end = ft_strchr(b + pos, '\n')))
 	{
-		if (buf[start] != '\0' && (end = ft_strchr(buf + start, '\0')) - buf != BUFF_SIZE)
+		if (b[pos] != '\0' && (end = ft_strchr(b + pos, '\0')) - b != BUFF_SIZE)
 			break;
-		if (buf[0] != '\0' && !add_to_list(&lst, buf + start,
-			!start ? bytes_read : BUFF_SIZE - start))
-				return (-1);
-		start = 0;
-		if ((bytes_read = pfread(fd, buf, BUFF_SIZE)) <= 0)
+		if (b[pos] != '\0' && !cp2lst(&lst, b + pos, !pos ? n : BUFF_SIZE - pos))
+			return (-1);
+		pos = 0;
+		end = b;
+		b[(n = pfread(fd, b, BUFF_SIZE)) > 0 ? n : 0] = '\0';
+		if (n <= 0)
 			break;
-		buf[bytes_read] = '\0';
 	}
-	if (bytes_read > 0 && !ca(line, lst, buf + start, end - (buf + start)))
-		bytes_read = -1;
-	cleanup(buf, &start, end, &lst, bytes_read);
-	return (bytes_read > 0 ? 1 : bytes_read);
+	if ((n > 0 || (n == 0 && lst)) && !cat(line, lst, b + pos, end - (b + pos)))
+		n = -1;
+	cleanup(b, &pos, end, &lst, &n);
+	return (n);
 }
