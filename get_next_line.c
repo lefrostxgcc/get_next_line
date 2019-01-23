@@ -39,7 +39,7 @@ static int cat(char **line, t_list *lst, char *buf, long buflen)
 	return (1);
 }
 
-static int cp2lst(t_list **list, const char *buf, long size)
+static int cplst(t_list **list, const char *buf, long size)
 {
 	t_list *new;
 
@@ -58,27 +58,25 @@ static int cp2lst(t_list **list, const char *buf, long size)
 	return (1);
 }
 
-static void cleanup(char *buf, long *beg, char *end, t_list **lst, long *n)
+static int cleanup(char *buf, long *beg, char *end, t_list **lst, long n)
 {
-	if (*n <= 0)
+	int gnlret;
+
+	gnlret = 1;
+	if (n <= 0)
 	{
-		if (*n == 0)
-		{
-			if (buf[*beg] || *lst)
-				*n = 1;
-		}
+		if (n == 0)
+			gnlret = (buf[*beg] || *lst) ? 1 : 0;
 		else
-			*n = -1;
+			gnlret = -1;
 		buf[0] = '\0';
 		*beg = 0;
 	}
 	else
-	{
 		*beg = end - buf + 1;
-		*n = 1;
-	}
 	if (*lst)
 		ft_lstdel(lst, free_node);
+	return (gnlret);
 }
 
 int		get_next_line(const int fd, char **line)
@@ -97,7 +95,7 @@ int		get_next_line(const int fd, char **line)
 	{
 		if (b[pos] != '\0' && (end = ft_strchr(b + pos, '\0')) - b != BUFF_SIZE)
 			break;
-		if (b[pos] != '\0' && !cp2lst(&lst, b + pos, !pos ? n : BUFF_SIZE - pos))
+		if (b[pos] != '\0' && !cplst(&lst, b + pos, !pos ? n : BUFF_SIZE - pos))
 			return (-1);
 		pos = 0;
 		end = b;
@@ -107,6 +105,5 @@ int		get_next_line(const int fd, char **line)
 	}
 	if ((n > 0 || (n == 0 && lst)) && !cat(line, lst, b + pos, end - (b + pos)))
 		n = -1;
-	cleanup(b, &pos, end, &lst, &n);
-	return (n);
+	return (cleanup(b, &pos, end, &lst, n));
 }
