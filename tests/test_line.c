@@ -302,7 +302,6 @@ START_TEST(test_line_one_buf_three_empty_line)
 	ck_assert_int_eq(result_fgh, 1);
 	ck_assert_pstr_eq(line_fgh, "");
 	ck_assert_int_eq(result_eof, 0);
-	line_eof = NULL;
 	ck_assert_ptr_null(line_eof);
 	free(line_fgh);
 	free(line_de);
