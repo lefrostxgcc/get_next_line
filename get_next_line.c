@@ -36,8 +36,8 @@ static int find_in_buf(char *buf, ssize_t *start, ssize_t *bytes, char **line)
 		if (buf[i] == '\n')
 		{
 			if (!(*line = ft_strnew(i - *start)))
-				return (cl(start, bytes, line, -1));
-			memcpy(*line, buf + *start, i - *start);
+				return (-1);
+			ft_memcpy(*line, buf + *start, i - *start);
 			*start = i + 1;
 			return (0);
 		}
@@ -45,24 +45,24 @@ static int find_in_buf(char *buf, ssize_t *start, ssize_t *bytes, char **line)
 	{
 		len = i - *start;
 		if (!(*line = ft_strnew(len)))
-			return (cl(start, bytes, line, -1));
-		memcpy(*line, buf + *start, len);
+			return (-1);
+		ft_memcpy(*line, buf + *start, len);
 		return (len);
 	}
 	return (0);
 }
 
-static int cp(char *buf, ssize_t start, ssize_t *line_len, char **line)
+static int cp(char *buf, ssize_t buf_len, ssize_t *line_len, char **line)
 {
 	char	*p;
 
-	if (!(p = ft_strnew(*line_len + start)))
+	if (!(p = ft_strnew(*line_len + buf_len)))
 		return (0);
-	memcpy(p, *line, *line_len);
-	memcpy(p + *line_len, buf, start);
+	ft_memcpy(p, *line, *line_len);
+	ft_memcpy(p + *line_len, buf, buf_len);
 	free(*line);
 	*line = p;
-	*line_len += start;
+	*line_len += buf_len;
 	return (1);
 }
 
@@ -75,12 +75,10 @@ int		get_next_line(const int fd, char **line)
 
 	if (fd < 0 || line == NULL)
 		return (-1);
-	if ((len = find_in_buf(b, &i, &n, line)) == 0 && *line)
-		return (1);
-	while (1)
+	if ((len = find_in_buf(b, &i, &n, line)) < 0 || (len == 0 && *line))
+		return (cl(&i, &n, line, len == 0 ? 1 : -1));
+	while ((n = pfread(fd, b, BUFF_SIZE)) > 0)
 	{
-		if ((n = pfread(fd, b, BUFF_SIZE)) <= 0)
-			return (cl(&i, &n, line, n));
 		i = 0;
 		while (i < n)
 			if (b[i++] == '\n')
@@ -90,4 +88,5 @@ int		get_next_line(const int fd, char **line)
 		if (n < BUFF_SIZE)
 			return (cl(&i, &n, line, 1));
 	}
+	return (cl(&i, &n, line, n));
 }
