@@ -22,34 +22,28 @@ static int cl(ssize_t *start, ssize_t *bytes, char **line, int status)
 	return (status);
 }
 
-static int find_in_buf(char *buf, ssize_t *start, ssize_t *bytes, char **line)
+static int find_in_buf(char *buf, ssize_t *start, ssize_t bytes, char **line)
 {
-	ssize_t		i;
+	char		*p;
 	ssize_t		len;
 
 	*line = 0;
-	len = 0;
-	if (*bytes <= 0)
+	if (bytes <= 0 || *start >= bytes)
 		return (0);
-	i = *start - 1;
-	while (++i < *bytes)
-		if (buf[i] == '\n')
-		{
-			if (!(*line = ft_strnew(i - *start)))
-				return (-1);
-			ft_memcpy(*line, buf + *start, i - *start);
-			*start = i + 1;
-			return (0);
-		}
-	if (i > *start)
+	if ((p = ft_memchr(buf + *start, '\n', bytes - *start)) != NULL)
 	{
-		len = i - *start;
-		if (!(*line = ft_strnew(len)))
+		len = p - (buf + *start);
+		if ((*line = ft_strnew(len)) == NULL)
 			return (-1);
 		ft_memcpy(*line, buf + *start, len);
-		return (len);
+		*start = p - buf + 1;
+		return (0);
 	}
-	return (0);
+	len = bytes - *start;
+	if ((*line = ft_strnew(len)) == NULL)
+		return (-1);
+	ft_memcpy(*line, buf + *start, len);
+	return (len);
 }
 
 static int cp(char *buf, ssize_t buf_len, ssize_t *line_len, char **line)
@@ -72,21 +66,24 @@ int		get_next_line(const int fd, char **line)
 	static ssize_t	i;
 	static ssize_t	n;
 	ssize_t			len;
+	char			*p;
 
 	if (fd < 0 || line == NULL)
 		return (-1);
-	if ((len = find_in_buf(b, &i, &n, line)) < 0 || (len == 0 && *line))
-		return (cl(&i, &n, line, len == 0 ? 1 : -1));
+	len = find_in_buf(b, &i, n, line);
+	if (len < 0)
+		return (cl(&i, &n, line, -1));
+	else if (len == 0 && *line)
+		return (1);
 	while ((n = pfread(fd, b, BUFF_SIZE)) > 0)
 	{
-		i = 0;
-		while (i < n)
-			if (b[i++] == '\n')
-				return (cp(b, i - 1, &len, line) ? 1 : cl(&i, &n, line, -1));
+		if ((p = ft_memchr(b, '\n', n)) != NULL)
+		{
+			i = p - b + 1;
+			return (cp(b, i - 1, &len, line) ? 1 : cl(&i, &n, line, -1));
+		}
 		if (!cp(b, n, &len, line))
 			return (cl(&i, &n, line, -1));
-		if (n < BUFF_SIZE)
-			return (cl(&i, &n, line, 1));
 	}
 	return (cl(&i, &n, line, n));
 }
